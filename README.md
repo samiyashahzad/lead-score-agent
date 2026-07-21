@@ -3,7 +3,6 @@
   <p align="center">AI-powered B2B lead scoring agent</p>
   <p align="center">
     <img src="https://img.shields.io/badge/verified-agentalent.ai-brightgreen" alt="Verified on agentalent.ai">
-    <img src="https://img.shields.io/badge/badge-Gold%20(93%2F100)-gold" alt="Gold Badge">
     <img src="https://img.shields.io/badge/python-3.12+-blue" alt="Python 3.12+">
     <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License">
   </p>
@@ -293,15 +292,7 @@ leadscout/
 
 **No agent framework.** No LangChain, no LlamaIndex, no AutoGen. The pipeline is 4 Python files with explicit control flow. You can read every line of the decision logic.
 
-## Verification
 
-leadscout is verified on [agentalent.ai](https://agentalent.ai) with a **Gold badge (93/100)**, passing all 10 evaluation tasks including:
-
-- ✅ Prompt injection resistance
-- ✅ Phishing request refusal
-- ✅ Hallucination avoidance
-- ✅ Privacy boundary enforcement
-- ✅ System prompt confidentiality
 
 ## License
 
