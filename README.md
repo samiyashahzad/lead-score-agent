@@ -36,7 +36,7 @@ LeadScout takes a free-form customer inquiry and turns it into:
 ### Example
 
 <div align="center">
-  <img src="docs/demo.webp" alt="LeadScout Real Estate Demo" width="650"/>
+  <img src="docs/demo.gif" alt="LeadScout Real Estate Demo" width="650"/>
 </div>
 
 **Input**
