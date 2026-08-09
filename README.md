@@ -1,18 +1,10 @@
+<h1 align="center">leadscout</h1>
+<p align="center">AI-powered B2B lead scoring agent</p>
 <p align="center">
-<<<<<<< HEAD
   <img src="https://img.shields.io/badge/verified-agentalent.ai-brightgreen" alt="Verified on agentalent.ai">
   <img src="https://img.shields.io/badge/badge-Gold%20(93%2F100)-gold" alt="Gold Badge">
   <img src="https://img.shields.io/badge/python-3.12+-blue" alt="Python 3.12+">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License">
-=======
-  <h1 align="center">leadscout</h1>
-  <p align="center">AI-powered B2B lead scoring agent</p>
-  <p align="center">
-    <img src="https://img.shields.io/badge/verified-agentalent.ai-brightgreen" alt="Verified on agentalent.ai">
-    <img src="https://img.shields.io/badge/python-3.12+-blue" alt="Python 3.12+">
-    <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License">
-  </p>
->>>>>>> 0b19d930288ba93848f83002d92949341326536a
 </p>
 
 # LeadScout
