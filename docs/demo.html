@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeadScout Demo</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .container {
+            background-color: #1e293b;
+            border-radius: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            width: 650px;
+            padding: 32px;
+            border: 1px solid #334155;
+            position: relative;
+        }
+
+        .input-section {
+            margin-bottom: 24px;
+        }
+
+        .label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #94a3b8;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .message-box {
+            background-color: #334155;
+            padding: 16px 20px;
+            border-radius: 12px;
+            font-size: 15px;
+            line-height: 1.6;
+            color: #e2e8f0;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .arrow-down {
+            text-align: center;
+            color: #475569;
+            font-size: 24px;
+            margin: 16px 0;
+            opacity: 0;
+            animation: fadeIn 0.5s ease forwards 1.5s;
+        }
+
+        .output-section {
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+            border: 1px solid #3b82f6;
+            border-radius: 12px;
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards 2s;
+        }
+
+        .output-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6, #10b981);
+        }
+
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #334155;
+        }
+
+        .score-badge {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .score-number {
+            font-size: 36px;
+            font-weight: 700;
+            color: #10b981;
+            line-height: 1;
+        }
+
+        .priority-tag {
+            background-color: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 14px;
+            font-weight: 600;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .ai-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #94a3b8;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .signals-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .signal-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .signal-label {
+            font-size: 12px;
+            color: #94a3b8;
+            text-transform: uppercase;
+        }
+
+        .signal-value {
+            font-size: 15px;
+            color: #f8fafc;
+            font-weight: 500;
+        }
+
+        .action-box {
+            background-color: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            padding: 12px 16px;
+            border-radius: 8px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .action-icon {
+            color: #60a5fa;
+            font-size: 20px;
+            line-height: 1;
+        }
+
+        .action-text {
+            font-size: 14px;
+            color: #bfdbfe;
+            line-height: 1.5;
+        }
+
+        .action-text strong {
+            color: #eff6ff;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Typing effect for the input */
+        .typing-text {
+            display: inline-block;
+            overflow: hidden;
+            white-space: pre-wrap;
+            animation: typing 1.5s steps(40, end);
+        }
+
+        @keyframes typing {
+            from { max-height: 0; opacity: 0; }
+            to { max-height: 100px; opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="input-section">
+            <div class="label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                Incoming Inquiry
+            </div>
+            <div class="message-box">
+                <div class="typing-text">"Hi, I'm looking for a 2-bedroom apartment in Dubai. My budget is AED 1.5M and I'd like to purchase within the next month."</div>
+            </div>
+        </div>
+
+        <div class="arrow-down">↓</div>
+
+        <div class="output-section">
+            <div class="header-row">
+                <div class="score-badge">
+                    <div class="score-number">87</div>
+                    <div style="font-size: 18px; color: #64748b; font-weight: 500;">/ 100</div>
+                    <div class="priority-tag">HOT</div>
+                </div>
+                <div class="ai-label">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"></path><rect x="4" y="8" width="16" height="12" rx="2"></rect><path d="M2 14h2"></path><path d="M20 14h2"></path><path d="M15 13v2"></path><path d="M9 13v2"></path></svg>
+                    LeadScout AI
+                </div>
+            </div>
+
+            <div class="signals-grid">
+                <div class="signal-item">
+                    <span class="signal-label">Intent</span>
+                    <span class="signal-value">High</span>
+                </div>
+                <div class="signal-item">
+                    <span class="signal-label">Budget</span>
+                    <span class="signal-value">AED 1.5M</span>
+                </div>
+                <div class="signal-item">
+                    <span class="signal-label">Timeline</span>
+                    <span class="signal-value">Immediate (30 days)</span>
+                </div>
+                <div class="signal-item">
+                    <span class="signal-label">Property</span>
+                    <span class="signal-value">2-Bedroom Apartment</span>
+                </div>
+            </div>
+
+            <div class="action-box">
+                <div class="action-icon">⚡</div>
+                <div class="action-text">
+                    <strong>Recommended Action</strong>
+                    Contact the lead immediately. Strong purchase intent with a defined budget and immediate timeline.
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

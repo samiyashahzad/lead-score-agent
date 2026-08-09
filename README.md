@@ -1,45 +1,49 @@
 <p align="center">
-  <h1 align="center">leadscout</h1>
-  <p align="center">AI-powered B2B lead scoring agent</p>
-  <p align="center">
-    <img src="https://img.shields.io/badge/verified-agentalent.ai-brightgreen" alt="Verified on agentalent.ai">
-    <img src="https://img.shields.io/badge/badge-Gold%20(93%2F100)-gold" alt="Gold Badge">
-    <img src="https://img.shields.io/badge/python-3.12+-blue" alt="Python 3.12+">
-    <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License">
-  </p>
+  <img src="https://img.shields.io/badge/verified-agentalent.ai-brightgreen" alt="Verified on agentalent.ai">
+  <img src="https://img.shields.io/badge/badge-Gold%20(93%2F100)-gold" alt="Gold Badge">
+  <img src="https://img.shields.io/badge/python-3.12+-blue" alt="Python 3.12+">
+  <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License">
 </p>
 
----
+# LeadScout
 
-**leadscout** takes raw, unstructured B2B inquiry text and returns a structured lead qualification — a score (0–100), a priority (Hot/Warm/Cold), a classification (Distributor or End Customer), and a human-readable explanation with a recommended next action.
+### AI-powered B2B lead qualification API
 
-One API endpoint. No database. No agent framework. Just FastAPI, an LLM, and a deterministic scoring engine.
+**Turn messy inbound inquiries into prioritized, actionable leads — automatically.**
 
-```bash
-curl -X POST http://localhost:8000/qualify \
-  -H "Content-Type: application/json" \
-  -d '{
-    "company": "Al-Rashid Trading Co.",
-    "inquiry": "We are a distribution company based in Riyadh looking to become your exclusive reseller across the GCC region. We currently serve 200+ retail outlets. Please send us your wholesale pricing and partnership terms ASAP."
-  }'
-```
+Sales teams receive leads through forms, emails, chat, and contact pages.
+The problem isn't getting the lead. It's figuring out **which leads deserve attention first.**
+
+LeadScout takes a free-form customer inquiry and turns it into:
+
+- 🎯 Lead score (0–100)
+- 🚨 Priority: Hot / Warm / Cold
+- 🧠 Customer intent & classification
+- 📊 Extracted buying signals
+- 💬 Plain-English explanation
+- ⚡ Recommended next action
+
+### Example
+
+<div align="center">
+  <img src="docs/demo.webp" alt="LeadScout Real Estate Demo" width="650"/>
+</div>
+
+**Input**
+
+> "Hi, I'm looking for a 2-bedroom apartment in Dubai. My budget is
+> AED 1.5M and I'd like to purchase within the next month."
+
+**LeadScout**
 
 ```json
 {
-  "score": 95,
+  "score": 87,
   "priority": "Hot",
-  "classification": "Distributor",
-  "confidence": 1.0,
-  "reasoning": [
-    "Inquiry explicitly expresses interest in becoming a reseller and distributor.",
-    "Strong commercial intent with request for wholesale pricing and partnership terms.",
-    "Decision-maker authority implied by direct partnership negotiation.",
-    "High urgency indicated by 'ASAP' language.",
-    "Distribution industry is directly relevant to the product.",
-    "GCC region scope indicates multi-country geographic reach.",
-    "200+ retail outlets suggests a large-scale operation."
-  ],
-  "next_action": "Assign to distribution partnerships team immediately for direct outreach given explicit reseller intent and multi-country scope."
+  "classification": "High Intent",
+  "confidence": 0.94,
+  "reasoning": "Strong purchase intent with a defined budget, specific property requirements, and an immediate purchase timeline.",
+  "next_action": "Contact the lead immediately."
 }
 ```
 

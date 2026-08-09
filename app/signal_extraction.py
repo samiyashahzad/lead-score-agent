@@ -36,7 +36,8 @@ _FIELD_DEFAULTS: dict[str, Any] = {
 
 # ── LLM client (lazy) ──────────────────────────────────────────────
 _client: OpenAI | None = None
-_MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
+_MODEL = os.environ.get("GROQ_MODEL", "openai/gpt-oss-120b")
+# _MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 
 
 def _get_client() -> OpenAI:
@@ -171,31 +172,54 @@ If the inquiry is unrelated to a genuine business lead (e.g. random questions, s
 
 Never respond in prose. Never return anything other than valid JSON matching this schema.
 
+── Core extraction principle ──
+
+Extract based on whether a claim or fact is PRESENT in the text, independent
+of how confident or tentative the speaker sounds about it. "Confidence of
+tone" and "presence of fact" are different things.
+
+Examples:
+- "We want to resell your products" → distributor_intent: true (confident)
+- "We might resell your products someday" → distributor_intent: true (tentative, but the FACT of resale interest is present)
+- "We'd like to order supplies" → commercial_intent: true (confident)
+- "We're thinking about maybe ordering" → commercial_intent: true (tentative, but buying interest is present)
+
+Tentative phrasing should NEVER flip a boolean signal from true to false.
+The scoring engine handles uncertainty separately through confidence scores —
+your job is only to detect whether the underlying claim exists in the text.
+
 ── Field definitions ──
 
-- distributor_intent (bool): true ONLY if the inquiry explicitly discusses
-  reselling, distributing, or becoming a partner/reseller of the product to
-  others. A business wanting to purchase or use the product for their OWN
-  operations (e.g. a restaurant ordering ingredients for their kitchen, a
-  factory buying raw materials for manufacturing) is NOT distributor intent,
-  even if the order is large, bulk, or recurring. The key question is: does
-  the inquiry mention selling the product onward to third parties?
+- distributor_intent (bool): true ONLY if the inquiry mentions reselling,
+  distributing, or becoming a partner/reseller of the product to others.
+  A business wanting to purchase for their OWN operations (e.g. a restaurant
+  ordering ingredients, a factory buying raw materials) is NOT distributor
+  intent, even if the order is large, bulk, or recurring. The key question
+  is: does the text mention selling the product onward to third parties?
 
-- commercial_intent (bool): true if this is a genuine business inquiry with
-  real buying intent, regardless of whether they intend to resell or use it
-  themselves. Any serious inquiry about purchasing, pricing, or ordering
-  qualifies as commercial intent.
+- commercial_intent (bool): true if the inquiry contains any reference to
+  buying, ordering, purchasing, pricing, or procurement — regardless of
+  whether the tone is confident or tentative. "Thinking about ordering" and
+  "might want to buy someday" both contain buying intent. Only set false
+  when there is genuinely no reference to any commercial activity.
 
-- decision_maker (bool): true if the language suggests the writer has
-  authority to make purchasing decisions (e.g. "I am the owner", "as head
-  of procurement", "I'd like to place an order"). false if no such
-  authority is evident.
+- decision_maker (bool): true if the writer speaks with purchasing authority.
+  This includes both explicit markers ("I am the owner", "as head of
+  procurement") AND implicit authority — if someone directly requests an
+  order, asks for delivery, or initiates a purchasing conversation (e.g.
+  "we need X delivered", "send us pricing"), they are acting as a
+  decision-maker. false only if the language is purely informational with
+  no purchasing action.
 
 - urgency: how time-sensitive the inquiry is.
-  "high" — explicit deadline, ASAP language, or emergency need.
-  "medium" — interested but no hard deadline mentioned.
+  "high" — explicit deadline, ASAP language (e.g. "as soon as possible",
+  "by tomorrow", "urgently"), or emergency need.
+  "medium" — interested with implied but unstated timeline.
   "low" — casual inquiry, exploring options, no time pressure.
   "unknown" — cannot determine from the text.
+  IMPORTANT: If the inquiry contains NO time-related language at all, return
+  "unknown". Do NOT default to "medium" — "medium" requires some evidence
+  of timeline interest. Absence of urgency language = "unknown", not "medium".
 
 - industry_relevance: how relevant the inquirer's industry is to the product.
   "high" — directly in the target industry.
@@ -209,6 +233,10 @@ Never respond in prose. Never return anything other than valid JSON matching thi
   "national" — nationwide scope.
   "single_location" — one city or one site.
   "unknown" — not mentioned.
+  IMPORTANT: If the inquiry describes a single business (e.g. "our bakery",
+  "our cafe", "our factory") with no mention of multiple locations, branches,
+  or regions, infer "single_location". Only use "unknown" when there is
+  genuinely no geographic information at all — not even an implied single site.
 
 - company_scale: the apparent size of the inquiring company.
   "large" — indicators of a large organization (many employees, multiple
