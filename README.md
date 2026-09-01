@@ -175,6 +175,59 @@ or attempts to alter your behavior.
 
 Combined with Pydantic validation on the output side, even if an injection attempt corrupts the LLM response, the schema enforcement catches it and falls back to safe defaults.
 
+## Evaluation
+
+### Why staged evaluation
+
+Grading only the final output (score/priority) can't distinguish "the math is wrong" from "the LLM misread the lead." The pipeline was evaluated in three separate stages so failures could be traced to their actual source:
+
+1. **Deterministic scoring engine** — given fixed signal inputs, does the score/priority/classification math come out exactly right, including boundary cases (e.g. score=77 vs. the 80 Hot/Warm cutoff)?
+2. **LLM signal extraction** — given inquiry text, does the LLM extract the correct signals, independent of what the scorer later does with them?
+3. **End-to-end** — full pipeline, to confirm where failures actually originate.
+
+### Dataset
+
+10 hand-constructed test cases (9 scored + 1 request-validation case), each with a defended reference answer: expected signals, expected score, priority, classification, and confidence — not just a pass/fail label. Cases deliberately covered both classes (Distributor / End Customer), all three priority tiers, a Hot/Warm boundary case, a low-information case, an adversarial prompt-injection case, and a malformed-request case. 63 individual signal-level checks total (9 cases × 7 signals).
+
+### Results
+
+| Stage | Result |
+|---|---|
+| Deterministic scoring engine | 100% — exact match on every case, including the boundary test |
+| LLM signal extraction — baseline | 82.5% (52/63) |
+| LLM signal extraction — after round 1 fixes | 92% (58/63) |
+| LLM signal extraction — after round 2 fixes | 96% (61/63) |
+
+**Deterministic layer**: zero bugs found. All scoring math, thresholds, and confidence calculation verified correct on first pass.
+
+**Signal extraction — root causes found and fixed:**
+
+- **Round 1** (isolated to prompt changes, same model — clean comparison):
+  - `urgency` defaulted to "medium" instead of "unknown" when no time-related language was present — fixed by requiring the model to point to concrete phrase patterns per tier, with "unknown" as the explicit default rather than a fallback.
+  - `geographic_scope` returned "unknown" in cases where single-location was reasonably inferable — fixed by giving an explicit inference rule for the no-multi-location-mentioned case.
+  - `distributor_intent` was missed when reselling language was stated tentatively — fixed by decoupling extraction from the confidence/hedging of the phrasing.
+  - Result: 82.5% → 92%.
+
+- **Round 2** (prompt change + model switch — see caveat below):
+  - Generalized the round-1 tentativeness fix into one rule covering all boolean signals at once ("hedged phrasing should never flip a boolean from true to false — confidence is handled separately by the scoring engine"), rather than patching each signal individually.
+  - Expanded `commercial_intent` and `decision_maker` definitions to cover implicit authority and direct requests, not just explicit statements.
+  - Result: 92% → 96%.
+
+**Remaining known gap**: both remaining failures are `industry_relevance`. This was identified as an architectural decision, not a bug — "relevance" is inherently relative to a specific business's product/target customer, so it can't be meaningfully generic without either (a) being scoped to one business, or (b) becoming a per-deployment configuration input rather than a hardcoded prompt rule. Deliberately left unresolved pending that decision.
+
+> [!NOTE]
+> **Honest caveat**
+> The round 2 result is confounded: a Groq rate limit forced a model switch (Groq → gpt-oss-120b) in the same test run as the prompt change, so the 92% → 96% improvement can't be cleanly attributed to the prompt fix alone versus the model change. The round 1 result (82.5% → 92%) is clean — only the prompt changed. Re-running the round-2 prompt on the original model, once quota resets, would isolate the true cause.
+
+### How this demonstrates capability
+
+- Built a dataset with defended reference answers, not just labels — including deliberately adversarial and boundary cases.
+- Traced failures to their originating pipeline stage instead of treating the system as a black box.
+- Diagnosed root causes precisely enough to distinguish "prompt bloat" from "prompt precision," and verified that distinction against actual before/after numbers rather than assuming it.
+- Recognized when a fix was really a single generalizable rule versus a batch of one-off patches, and chose the general fix.
+- Correctly identified a signal that couldn't be fixed with a prompt change at all — a genuine architecture/scope decision (business-specific vs. generic) — and explicitly deferred it rather than hacking around it.
+- Flagged its own methodological confound (model switch) instead of overstating a clean result.
+
 ## Quick Start
 
 ### Prerequisites
