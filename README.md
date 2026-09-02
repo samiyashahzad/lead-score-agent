@@ -193,10 +193,13 @@ Grading only the final output (score/priority) can't distinguish "the math is wr
 
 | Stage | Result |
 |---|---|
-| Deterministic scoring engine | 100% — exact match on every case, including the boundary test |
+| Deterministic scoring engine | 100% (36/36) — exact match on every case, including the boundary test |
 | LLM signal extraction — baseline | 82.5% (52/63) |
-| LLM signal extraction — after round 1 fixes | 92% (58/63) |
+| LLM signal extraction — after round 1 fixes | 92.1% (58/63) |
 | LLM signal extraction — after round 2 fixes | 96% (61/63) |
+| End-to-end (full pipeline) | 80.4% (45/56) |
+
+**End-to-end insight:** Every end-to-end failure traced back to a Stage 1 signal extraction error. The scoring engine was never the problem. Some wrong signals didn't change the final priority (e.g., Case A scored 92 instead of 97, but both are ≥ 80 → still "Hot"). Other wrong signals flipped the priority entirely (e.g., Case J scored ~90 instead of 77, crossing the 80 threshold from Warm to Hot).
 
 **Deterministic layer**: zero bugs found. All scoring math, thresholds, and confidence calculation verified correct on first pass.
 
