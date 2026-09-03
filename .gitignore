@@ -30,3 +30,4 @@ build/
 *.egg-info/
 *.egg
 scripts/generate_gif.py
+LeadScout — System Findings & Design Notes.md
