@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeadScout Reliability Audit</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="hero-bg"></div>
+    <div class="container">
+        <!-- 1. Hero -->
+        <div class="prose reveal">
+            <h1>LeadScout Reliability Audit</h1>
+            <p class="subtitle">An engineering case study evaluating the reliability and factual grounding of the LeadScout LLM pipeline under specific failure conditions and ambiguous inputs. The system processes raw inquiries through a multi-stage pipeline: extracting categorical signals via LLM, applying deterministic business logic to score the lead, and generating an LLM-driven explanation and recommended action.</p>
+        </div>
+
+        <!-- 2. Compact evidence summary -->
+        <div class="metric-grid reveal">
+            <div class="glass-card metric-card">
+                <h4>Concurrency Load-to-Failure</h4>
+                <div class="metric-value">20 / 20 @ C=1</div>
+                <p class="metric-detail">Baseline workload completed before provider throttling emerged under higher concurrent load.</p>
+            </div>
+            <div class="glass-card metric-card">
+                <h4>Fault Injection Recovery</h4>
+                <div class="metric-value"><span class="status-pass">GRACEFUL</span></div>
+                <p class="metric-detail">Transient 429s recover internally; persistent limits return structured HTTP 503.</p>
+            </div>
+            <div class="glass-card metric-card">
+                <h4>Next-Action Grounding</h4>
+                <div class="metric-value">11 / 12</div>
+                <p class="metric-detail">Clearly grounded generations. 0 clear factual hallucinations observed.</p>
+            </div>
+            <div class="glass-card metric-card">
+                <h4>Dataset Ambiguity (Urgency)</h4>
+                <div class="metric-value">7 / 9</div>
+                <p class="metric-detail">Jev matches existing labels. 2 mismatches expose specification ambiguity.</p>
+            </div>
+        </div>
+
+        <!-- 3. Visual pipeline architecture -->
+        <h2 class="reveal">Pipeline Architecture</h2>
+        <div class="architecture reveal">
+            <div class="glass-card arch-node n1">
+                <h4>1. Signal Extraction</h4>
+                <p><code>call_llm()</code><br>Converts raw text inquiry into structured booleans/enums.</p>
+            </div>
+            <div class="arch-arrow">→</div>
+            <div class="glass-card arch-node n2">
+                <h4>2. Scoring Engine</h4>
+                <p><code>score_lead()</code><br>Deterministic python logic applying weights to generate Score & Priority.</p>
+            </div>
+            <div class="arch-arrow">→</div>
+            <div class="glass-card arch-node n3">
+                <h4>3. Explanation Gen</h4>
+                <p><code>generate_explanation()</code><br>LLM generates <code>next_action</code> solely from structured output.</p>
+            </div>
+        </div>
+
+        <!-- 4. Where the system broke -->
+        <div class="prose reveal">
+            <h2>Where the System Broke</h2>
+            <p>The system was evaluated against the live LeadScout API using the production <code>threading.Semaphore(5)</code> constraint. Concurrency levels were run independently to isolate provider quota effects.</p>
+        </div>
+        
+        <div class="concurrency-chart reveal">
+            <div class="c-row">
+                <div class="c-label"><span>Concurrency = 1</span> <span class="c-stats">20/20 Success • ~310s • p50 ~15.6s • p95 ~22.5s</span></div>
+                <div class="c-track"><div class="c-fill c1"></div></div>
+            </div>
+            <div class="c-row">
+                <div class="c-label"><span>Concurrency = 5</span> <span class="c-stats">7/20 Success • ~72s • p50 ~15.2s • p95 ~20.8s</span></div>
+                <div class="c-track"><div class="c-fill c5"></div></div>
+            </div>
+            <div class="c-row">
+                <div class="c-label"><span>Concurrency = 10</span> <span class="c-stats">8/20 Success • ~85.5s • p50 ~34.2s • p95 ~48.9s</span></div>
+                <div class="c-track"><div class="c-fill c10"></div></div>
+            </div>
+        </div>
+        
+        <div class="prose reveal">
+            <p><strong>Finding:</strong> The provider's 8,000 tokens-per-minute (TPM) quota was the hard bottleneck. The C5 vs C10 success percentages should <em>not</em> be interpreted as an improvement because provider throttling heavily affected the runs and repeated controlled trials were not performed.</p>
+        </div>
+
+        <!-- 5. Failure injection -->
+        <h2 class="reveal">Failure Injection</h2>
+        <div class="prose reveal">
+            <p>We isolated the rate-limiting behavior from the concurrency load test to observe how the application handles provider <code>HTTP 429</code> responses. The following models the behavior before and after mitigation.</p>
+        </div>
+        
+        <div class="flow-grid reveal">
+            <div class="glass-card flow-card">
+                <h3>Before (Baseline)</h3>
+                <div class="flow-step">HTTP 429 Rate Limit</div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step fail-node">Unhandled RateLimitError</div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step fail-node">Client-visible HTTP 500</div>
+                <p class="metric-detail" style="text-align:center; margin-top:1em;">All 3 controlled baseline scenarios raised an unhandled RateLimitError on the first injected 429. Separately, the live load test confirmed that upstream 429s surfaced to clients as HTTP 500 errors.</p>
+            </div>
+            
+            <div class="glass-card flow-card">
+                <h3>After (Mitigated)</h3>
+                <div class="flow-step">HTTP 429 Rate Limit</div>
+                <div class="flow-arrow">↓</div>
+                <div class="flow-step warn-node">Bounded Retry (Max 3 attempts)</div>
+                <div class="branch">
+                    <div class="branch-col">
+                        <span style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px;">Transient</span>
+                        <div class="flow-step pass-node" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; text-align:center;">Recovers in budget<br>→ Success</div>
+                    </div>
+                    <div class="branch-col">
+                        <span style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px;">Persistent</span>
+                        <div class="flow-step warn-node" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; text-align:center;">ProviderRateLimitError<br>→ Structured HTTP 503</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. Generative boundary -->
+        <div class="prose reveal">
+            <h2>Generative Boundary</h2>
+            <p>The <code>generate_explanation()</code> function intentionally does not receive the raw lead inquiry, acting as a strict architectural boundary. We tested whether the LLM introduces unsupported factual specificity beyond the structured evidence available to it.</p>
+            <ul>
+                <li><strong>11/12</strong> clearly grounded on manual review.</li>
+                <li><strong>1/12</strong> borderline unsupported goal framing (<em>"to secure a distribution partnership"</em>).</li>
+                <li><strong>0</strong> clear factual hallucinations observed (no invented people, times, products, or locations).</li>
+            </ul>
+            <p><strong>Note on Lexical Evaluators:</strong> A simple rule-based priority-policy checker incorrectly flagged the generated phrase <code>"no immediate action required"</code> as a Warm/Hot violation because it contained the word "immediate". This false positive highlights the brittleness of pure string-matching for evaluating policy alignment.</p>
+        </div>
+
+        <!-- 7. When the ground truth is the problem -->
+        <h2 class="reveal">When the Ground Truth is the Problem</h2>
+        <div class="prose reveal">
+            <p>We consolidated an existing urgency experiment utilizing the <code>typesafe-ai/jev</code> evaluator model against 9 cases in the baseline dataset. Jev matched the expected urgency label in 7/9 cases. The two disagreements exposed ambiguity in the underlying specification rather than strict model failure:</p>
+        </div>
+        
+        <div class="jev-grid reveal">
+            <div class="glass-card">
+                <div class="jev-labels">
+                    <span class="badge" style="color:var(--text-main);">Case F: <code>multi_branch_distributor_hot</code></span>
+                </div>
+                <div class="jev-quote">"...would like to explore stocking your product line..."</div>
+                <div class="jev-labels" style="margin-top:1em;">
+                    <span class="badge" style="border-color: var(--accent-amber); color: var(--accent-amber);">Expected: low</span>
+                    <span class="badge" style="border-color: var(--text-muted); color: var(--text-muted);">Jev: unknown</span>
+                </div>
+                <p class="metric-detail"><strong>Specification Ambiguity:</strong> The original label interpreted pacing/hedging language ("explore") as low urgency. Jev strictly followed the prompt ("no time-related language → unknown").</p>
+            </div>
+            <div class="glass-card">
+                <div class="jev-labels">
+                    <span class="badge" style="color:var(--text-main);">Case I: <code>large_enterprise_end_customer</code></span>
+                </div>
+                <div class="jev-quote">"...want to set up a regular supply contract... send pricing for national-level procurement."</div>
+                <div class="jev-labels" style="margin-top:1em;">
+                    <span class="badge" style="border-color: var(--accent-amber); color: var(--accent-amber);">Expected: medium</span>
+                    <span class="badge" style="border-color: var(--text-muted); color: var(--text-muted);">Jev: unknown</span>
+                </div>
+                <p class="metric-detail"><strong>Label Ambiguity:</strong> The inquiry indicated high business seriousness but contained no explicit timing evidence. Dataset labeled it <code>medium</code>, Jev marked <code>unknown</code>.</p>
+            </div>
+        </div>
+        
+        <div class="prose reveal">
+            <p><strong>Conclusion:</strong> These disagreements exposed ambiguity in the urgency specification and existing labels. <em>This experiment is not sufficient to rank models</em>; it simply highlights that the ground truth requires tightening before acting as a reliable benchmark.</p>
+        </div>
+
+        <!-- 8. Not every finding deserves a fix -->
+        <div class="reveal" style="max-width: 900px;">
+            <h2>Not Every Finding Deserves a Fix</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Status</th>
+                        <th>Rationale</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Unhandled 429s</strong></td>
+                        <td><span class="status-pass">Fixed</span></td>
+                        <td>Implemented bounded retries and structured 503s to prevent client 500s.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Concurrency Limit</strong></td>
+                        <td><span class="status-warn">Left Alone</span></td>
+                        <td><code>Semaphore(5)</code> bounds simultaneous LLM calls but does not enforce the provider's token-per-minute quota.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Next-action grounding</strong></td>
+                        <td><span class="status-warn">Left Alone</span></td>
+                        <td>No clear factual hallucinations were observed in the 12-generation targeted review; evidence did not justify a production change.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Dataset Ambiguity</strong></td>
+                        <td><span class="badge" style="color:var(--text-main); border: 1px solid var(--border-color);">Documented</span></td>
+                        <td>Urgency instructions and labels require an alignment pass before further benchmarking.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 9. Limitations and methodology -->
+        <div class="limitations-box reveal">
+            <h3>Methodology & Limitations</h3>
+            <p>This audit is a constrained point-in-time reliability investigation. Please note the following critical limitations:</p>
+            <ul>
+                <li><strong>Not General Benchmarking:</strong> Concurrency results are highly specific to the tested provider, model, tier (8,000 TPM limit), and exact payload size.</li>
+                <li><strong>No Claim of Model Superiority:</strong> The Jev cross-model audit only highlights dataset ambiguity and cannot be used to prove one model is "better" than another.</li>
+                <li><strong>No Production Deployment or User Validation:</strong> Findings and fixes were evaluated locally or via mocked boundaries (e.g., patched sleep durations). None of this implies production deployment or end-user validation.</li>
+                <li><strong>Sample Size constraints:</strong> Next-action grounding was manually reviewed across only 12 generated next actions across four controlled structured-input states.</li>
+            </ul>
+        </div>
+
+        <!-- 10. Links -->
+        <div class="prose reveal">
+            <h2>Evaluation Artifacts</h2>
+            <ul>
+                <li><a href="../../tests/evals/results/concurrency_baseline.md">Concurrency Baseline (Raw Data)</a></li>
+                <li><a href="../../tests/evals/results/rate_limiting_post_mitigation.md">Rate Limiting Fault Injection (Before/After)</a></li>
+                <li><a href="../../tests/evals/results/next_action_grounding_raw.md">Next Action Grounding (12 Generations)</a></li>
+                <li><a href="../../tests/evals/results/urgency_cross_model_audit.md">Urgency Cross-Model Audit</a></li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const observerOptions = {
+                root: null,
+                rootMargin: '0px',
+                threshold: 0.1
+            };
+            
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, observerOptions);
+            
+            document.querySelectorAll('.reveal').forEach(el => {
+                observer.observe(el);
+            });
+        });
+    </script>
+</body>
+</html>

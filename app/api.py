@@ -13,7 +13,7 @@ from starlette.status import HTTP_422_UNPROCESSABLE_CONTENT
 
 from app.schemas import LeadInput, QualifyResponse
 from app.scoring import score_lead
-from app.signal_extraction import signal_extraction
+from app.signal_extraction import signal_extraction, ProviderRateLimitError
 from app.explanation import generate_explanation
 
 app = FastAPI(
@@ -23,7 +23,7 @@ app = FastAPI(
 )
 
 @app.post("/qualify", response_model=QualifyResponse)
-async def qualify(lead:LeadInput):
+def qualify(lead:LeadInput):
     """
     Qualify a lead by extracting signals, scoring, and generating explanations
     """
@@ -65,6 +65,9 @@ def _make_serializable(obj):
         return obj.decode("utf-8", errors="replace")
     return obj
 
-    
-
-    
+@app.exception_handler(ProviderRateLimitError)
+async def handle_provider_rate_limit(request, exc):
+    return JSONResponse(
+        status_code=503,
+        content={"detail": "Upstream AI provider rate limit exceeded. Please try again later."}
+    )

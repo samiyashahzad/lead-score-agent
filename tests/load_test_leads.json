@@ -1,0 +1,202 @@
+[
+  {
+    "id": 1,
+    "label": "Hot — National Distributor",
+    "request": {
+      "company": "Atlas Distribution Co",
+      "industry": "FMCG",
+      "source": "Trade Show",
+      "inquiry": "We are the largest FMCG distributor in Punjab with 8 warehouses. We want exclusive distribution rights for your entire product line across Pakistan. Our CEO is available for a call this week."
+    }
+  },
+  {
+    "id": 2,
+    "label": "Hot — International Distributor",
+    "request": {
+      "company": "Emirates Trade House",
+      "industry": "Consumer Goods",
+      "source": "Email",
+      "inquiry": "We operate distribution networks across UAE, Saudi Arabia, and Qatar. We want to exclusively distribute your home appliance range across the GCC. Our procurement head can meet in Dubai next Monday."
+    }
+  },
+  {
+    "id": 3,
+    "label": "Hot — Large Real Estate Buyer",
+    "request": {
+      "company": "Skyline Developments",
+      "industry": "Real Estate",
+      "source": "Website",
+      "inquiry": "I am the CEO of Skyline Developments. We need to purchase two full floors of office space in your Gulberg project. Budget is PKR 50 crore and we need to finalize within 10 days. Send floor plans immediately."
+    }
+  },
+  {
+    "id": 4,
+    "label": "Hot — Urgent Manufacturing Buyer",
+    "request": {
+      "company": "PakSteel Industries",
+      "industry": "Manufacturing",
+      "source": "Phone",
+      "inquiry": "This is the Head of Procurement at PakSteel. We urgently need 500 tons of raw steel by end of this month. Our current supplier failed delivery and production is halting. Please confirm availability ASAP."
+    }
+  },
+  {
+    "id": 5,
+    "label": "Hot — Regional Pharma Distributor",
+    "request": {
+      "company": "MedLink Distributors",
+      "industry": "Pharmaceuticals",
+      "source": "LinkedIn",
+      "inquiry": "We distribute pharmaceutical products across Sindh and Balochistan through 15 regional depots. Looking to add your OTC medicine range to our portfolio. Our distribution director wants to discuss exclusive terms this week."
+    }
+  },
+  {
+    "id": 6,
+    "label": "Warm — Restaurant Bulk Buyer",
+    "request": {
+      "company": "Lahore Kitchen Co",
+      "industry": "Food Service",
+      "source": "Referral",
+      "inquiry": "We run a restaurant chain with 4 branches in Lahore. We use about 500kg of cooking oil monthly for our own kitchens. Can you share wholesale pricing for a recurring monthly order?"
+    }
+  },
+  {
+    "id": 7,
+    "label": "Warm — Construction End Customer",
+    "request": {
+      "company": "BuildRight Contractors",
+      "industry": "Construction",
+      "source": "Website",
+      "inquiry": "We are building 3 residential towers in Islamabad and Rawalpindi. We need reliable supply of electrical fittings — about 10,000 units over 4 months. Can your team share a catalog and pricing?"
+    }
+  },
+  {
+    "id": 8,
+    "label": "Warm — Small Retailer Exploring",
+    "request": {
+      "company": "Nadeem General Store",
+      "industry": "Retail",
+      "source": "Phone",
+      "inquiry": "I run a neighborhood store in Faisalabad. Customers keep asking for your snacks. I want to stock them for resale but I need to understand the margins. What is your minimum order quantity?"
+    }
+  },
+  {
+    "id": 9,
+    "label": "Warm — IT Services Buyer",
+    "request": {
+      "company": "TechVantage Solutions",
+      "industry": "Technology",
+      "source": "Email",
+      "inquiry": "We are an IT consultancy with 200 employees. Looking to procure 50 enterprise laptop workstations for our new Karachi office. Need them delivered within the next month. Please send specs and corporate pricing."
+    }
+  },
+  {
+    "id": 10,
+    "label": "Warm — Agriculture Buyer",
+    "request": {
+      "company": "Green Valley Farms",
+      "industry": "Agriculture",
+      "source": "Website",
+      "inquiry": "We operate a 500-acre farm in southern Punjab. Interested in your fertilizer products for the upcoming Rabi season. Need about 20 tons. Can you provide pricing and delivery timeline?"
+    }
+  },
+  {
+    "id": 11,
+    "label": "Warm — Textile Manufacturer",
+    "request": {
+      "company": "Crescent Textiles",
+      "industry": "Textiles",
+      "source": "Trade Show",
+      "inquiry": "We run a medium-sized textile mill in Faisalabad producing around 50,000 meters of fabric monthly. We need a steady supply of industrial dyes. Interested in setting up a quarterly supply contract."
+    }
+  },
+  {
+    "id": 12,
+    "label": "Warm — Hospital Procurement",
+    "request": {
+      "company": "City General Hospital",
+      "industry": "Healthcare",
+      "source": "Email",
+      "inquiry": "Our hospital procurement department is looking for a new supplier of surgical gloves and masks. We need about 100,000 units per quarter for our 300-bed facility. Please share your medical supplies catalog."
+    }
+  },
+  {
+    "id": 13,
+    "label": "Cold — Student Research",
+    "request": {
+      "company": "LUMS University",
+      "industry": null,
+      "source": "Website",
+      "inquiry": "Hi, I'm an MBA student doing a case study on B2B distribution models in Pakistan. Could you share some general information about your channel strategy? This is for academic purposes only."
+    }
+  },
+  {
+    "id": 14,
+    "label": "Cold — Vague Browsing",
+    "request": {
+      "company": "Unknown Corp",
+      "industry": null,
+      "source": "Website",
+      "inquiry": "just looking around at what you offer"
+    }
+  },
+  {
+    "id": 15,
+    "label": "Cold — Job Seeker",
+    "request": {
+      "company": "Self",
+      "industry": null,
+      "source": "Website",
+      "inquiry": "Hello, I am a fresh graduate looking for a sales position at your company. I have a BBA degree and 6 months of internship experience. Can you tell me about any open positions?"
+    }
+  },
+  {
+    "id": 16,
+    "label": "Cold — Spam/Irrelevant",
+    "request": {
+      "company": "QuickLoans Ltd",
+      "industry": "Finance",
+      "source": "Email",
+      "inquiry": "Congratulations! You have been pre-approved for a business loan of up to PKR 50 lakh at competitive rates. Reply YES to learn more about our special offer."
+    }
+  },
+  {
+    "id": 17,
+    "label": "Hot — Automotive Parts Distributor",
+    "request": {
+      "company": "AutoParts Network",
+      "industry": "Automotive",
+      "source": "Trade Show",
+      "inquiry": "We are Pakistan's second-largest automotive parts distributor with outlets in 15 cities. We want to distribute your brake pad and filter range nationally. Our VP of partnerships is available for a meeting in Lahore tomorrow."
+    }
+  },
+  {
+    "id": 18,
+    "label": "Warm — Hotel Chain Buyer",
+    "request": {
+      "company": "Pearl Continental Hotels",
+      "industry": "Hospitality",
+      "source": "Referral",
+      "inquiry": "We manage 8 hotels across Pakistan and need a reliable supplier for premium bed linens and towels. Looking for high-thread-count Egyptian cotton products. Can you send samples and bulk pricing for our annual procurement?"
+    }
+  },
+  {
+    "id": 19,
+    "label": "Cold — Competitor Research",
+    "request": {
+      "company": "Rival Industries",
+      "industry": "Manufacturing",
+      "source": "Website",
+      "inquiry": "Can you send me a detailed breakdown of your product specifications, manufacturing process, and pricing tiers? I am doing a competitive analysis."
+    }
+  },
+  {
+    "id": 20,
+    "label": "Hot — Cosmetics Regional Distributor",
+    "request": {
+      "company": "GlamourLink Trading",
+      "industry": "Cosmetics",
+      "source": "Email",
+      "inquiry": "We are a beauty products distributor covering KPK and northern areas with 6 warehouses. We want to become the exclusive regional distributor for your skincare line. Our MD wants to schedule a video call this Friday to finalize terms and MOQs."
+    }
+  }
+]

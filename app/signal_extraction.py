@@ -1,15 +1,20 @@
 import json
 import logging
 import os
+import threading
+import time
 from typing import Any
 
 from dotenv import load_dotenv
 load_dotenv()
 
-from openai import OpenAI
+from openai import OpenAI, RateLimitError
 from pydantic import ValidationError
 
 from .schemas import Signals
+
+class ProviderRateLimitError(Exception):
+    pass
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +44,10 @@ _client: OpenAI | None = None
 _MODEL = os.environ.get("GROQ_MODEL", "openai/gpt-oss-120b")
 # _MODEL = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 
+# ── Concurrency control ───────────────────────────────────────────
+# Allow at most 5 concurrent LLM calls to avoid overwhelming Groq.
+_llm_semaphore = threading.Semaphore(5)
+
 
 def _get_client() -> OpenAI:
     """Return the shared OpenAI client, creating it on first use."""
@@ -59,16 +68,35 @@ def _get_client() -> OpenAI:
 
 def call_llm(system_prompt: str, user_message: str) -> str:
     """Call the LLM (Groq via OpenAI-compatible API) and return the raw text response."""
-    response = _get_client().chat.completions.create(
-        model=_MODEL,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message},
-        ],
-        temperature=0.0,
-        response_format={"type": "json_object"},
-    )
-    return response.choices[0].message.content or ""
+    max_attempts = 3
+    with _llm_semaphore:
+        for attempt in range(1, max_attempts + 1):
+            try:
+                response = _get_client().chat.completions.create(
+                    model=_MODEL,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_message},
+                    ],
+                    temperature=0.0,
+                    response_format={"type": "json_object"},
+                )
+                return response.choices[0].message.content or ""
+            except RateLimitError as e:
+                if attempt == max_attempts:
+                    raise ProviderRateLimitError("Upstream AI provider rate limit exhausted after 3 attempts") from e
+                
+                retry_after = None
+                if hasattr(e, 'response') and e.response is not None:
+                    retry_header = e.response.headers.get('retry-after')
+                    if retry_header:
+                        try:
+                            retry_after = float(retry_header)
+                        except ValueError:
+                            pass
+                
+                sleep_time = retry_after if retry_after is not None else float(2 ** (attempt - 1))
+                time.sleep(sleep_time)
 
 
 # ── Parsing & validation helpers ───────────────────────────────────
