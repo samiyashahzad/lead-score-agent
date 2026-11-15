@@ -42,9 +42,12 @@ LeadScout takes a free-form customer inquiry and turns it into:
 {
   "score": 87,
   "priority": "Hot",
-  "classification": "High Intent",
-  "confidence": 0.94,
-  "reasoning": "Strong purchase intent with a defined budget, specific property requirements, and an immediate purchase timeline.",
+  "classification": "End Customer",
+  "confidence": 0.75,
+  "reasoning": [
+    "The inquiry describes a direct property purchase rather than resale or distribution.",
+    "A budget and a defined purchase timeline indicate commercial intent."
+  ],
   "next_action": "Contact the lead immediately."
 }
 ```
@@ -69,7 +72,7 @@ leadscout automates this with a 3-stage pipeline: **extract signals → score de
                               ▼
                  ┌─────────────────────────┐
                  │   Signal Extraction     │
-                 │   (LLM: Llama 3.3 70B) │
+                 │   (LLM: Groq / gpt-oss-120b default) │
                  │                         │
                  │  Extracts 7 structured  │
                  │  signals from freeform  │
@@ -89,7 +92,7 @@ leadscout automates this with a 3-stage pipeline: **extract signals → score de
                               ▼
                  ┌─────────────────────────┐
                  │  Explanation Generator  │
-                 │  (LLM: Llama 3.3 70B)  │
+                 │  (LLM: Groq / gpt-oss-120b default)  │
                  │                         │
                  │  Reasoning + next       │
                  │  action recommendation  │
@@ -98,6 +101,8 @@ leadscout automates this with a 3-stage pipeline: **extract signals → score de
                               ▼
                        QualifyResponse (JSON)
 ```
+
+The current model is configured through `GROQ_MODEL`; the code defaults to `openai/gpt-oss-120b` on Groq. Earlier development and evaluation runs used Groq's Llama 3.3 70B Versatile model. That model is now deprecated, so those historical results cannot currently be reproduced against the same model. The round-two evaluation also changed the prompt and model in the same run; its improvement must not be attributed to either change independently.
 
 The scoring engine is the deliberate chokepoint: it takes validated signals in, produces a score out, and **no LLM can override it.** The explanation LLM receives the score as a hard fact and must match its tone accordingly.
 
@@ -220,7 +225,7 @@ Grading only the final output (score/priority) can't distinguish "the math is wr
 
 > [!NOTE]
 > **Honest caveat**
-> The round 2 result is confounded: a Groq rate limit forced a model switch (Groq → gpt-oss-120b) in the same test run as the prompt change, so the 92% → 96% improvement can't be cleanly attributed to the prompt fix alone versus the model change. The round 1 result (82.5% → 92%) is clean — only the prompt changed. Re-running the round-2 prompt on the original model, once quota resets, would isolate the true cause.
+> The round 2 result is confounded: a Groq rate limit led to a model switch on Groq (from Llama 3.3 70B Versatile to gpt-oss-120b) in the same test run as the prompt change, so the 92% → 96% improvement cannot be cleanly attributed to the prompt fix alone or the model change. The round 1 result (82.5% → 92%) is clean — only the prompt changed. Re-running the round-2 prompt on the original model, once quota resets, would isolate the true cause.
 
 ### How this demonstrates capability
 
@@ -230,6 +235,22 @@ Grading only the final output (score/priority) can't distinguish "the math is wr
 - Recognized when a fix was really a single generalizable rule versus a batch of one-off patches, and chose the general fix.
 - Correctly identified a signal that couldn't be fixed with a prompt change at all — a genuine architecture/scope decision (business-specific vs. generic) — and explicitly deferred it rather than hacking around it.
 - Flagged its own methodological confound (model switch) instead of overstating a clean result.
+
+### Reliability audit
+
+The pipeline was also evaluated under targeted reliability and failure conditions, beyond the staged accuracy tests above. The published [LeadScout Reliability Audit](https://samiyashahzad.github.io/lead-score-agent/case-study/) includes methodology, findings, limitations, and links to the raw evaluation artifacts.
+
+| Investigation | Finding |
+|---|---|
+| Deterministic scoring | 100% (36/36) exact matches in the scoring test set |
+| Signal extraction | 96% (61/63) after two rounds of prompt/model changes; round two is confounded by a model switch |
+| Provider rate limiting | Transient 429s recovered within three attempts; persistent limits returned a structured HTTP 503 after mitigation |
+| Next-action grounding | 11/12 generations were clearly grounded; one was borderline, with zero clear factual hallucinations observed |
+| Urgency cross-model audit | Jev matched 7/9 expected labels; disagreements exposed ambiguity in the reference labels |
+
+**Concurrency caveat:** In the live load test, 20/20 requests succeeded at concurrency 1, while provider quota exhaustion affected the concurrency 5 and 10 runs. These are provider- and workload-specific observations, not a general concurrency benchmark.
+
+The audit is deliberately transparent about sample sizes, provider limits, confounded comparisons, and the absence of production-user validation. See the [full case study](https://samiyashahzad.github.io/lead-score-agent/case-study/) for details and raw reports.
 
 ## Quick Start
 
@@ -242,8 +263,8 @@ Grading only the final output (score/priority) can't distinguish "the math is wr
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/leadscout.git
-cd leadscout
+git clone https://github.com/samiyashahzad/lead-score-agent.git
+cd lead-score-agent
 
 # Create virtual environment
 python -m venv .venv
@@ -284,6 +305,38 @@ pytest tests/ -v
 
 ### `POST /qualify`
 
+**Example request:**
+
+```json
+{
+  "company": "Dubai Property Group",
+  "inquiry": "We are looking for a two-bedroom apartment in Dubai with a budget of AED 1.5M. We would like to purchase within the next month.",
+  "industry": "Real estate",
+  "source": "Website form",
+  "country": "United Arab Emirates",
+  "name": "Example Contact",
+  "email": "contact@example.com"
+}
+```
+
+**Example response (illustrative):**
+
+```json
+{
+  "score": 87,
+  "priority": "Hot",
+  "classification": "End Customer",
+  "confidence": 0.75,
+  "reasoning": [
+    "The inquiry describes a direct property purchase rather than resale or distribution.",
+    "A budget and a defined purchase timeline indicate commercial intent."
+  ],
+  "next_action": "Contact the lead to discuss the property requirements and arrange the next step."
+}
+```
+
+The response below describes the fields returned by the endpoint.
+
 Qualify a lead by extracting signals, scoring, and generating an explanation.
 
 **Request body:**
@@ -305,8 +358,8 @@ Qualify a lead by extracting signals, scoring, and generating an explanation.
 | `score` | int | 0–100 lead score |
 | `priority` | string | `"Hot"`, `"Warm"`, or `"Cold"` |
 | `classification` | string | `"Distributor"` or `"End Customer"` |
-| `confidence` | float | 0.0–1.0, measures data completeness |
-| `reasoning` | string[] | One sentence per signal explaining the score |
+| `confidence` | float | 0.0–1.0; proportion of the four enum signals resolved to a value other than `unknown` |
+| `reasoning` | string[] | Explanatory statements supporting the qualification result |
 | `next_action` | string | Recommended follow-up action |
 
 **Error (422):**
@@ -348,7 +401,7 @@ leadscout/
 |---|---|---|
 | API | [FastAPI](https://fastapi.tiangolo.com/) | Async, auto-generated OpenAPI docs, Pydantic integration |
 | Validation | [Pydantic v2](https://docs.pydantic.dev/) | Schema enforcement at API boundary and LLM output |
-| LLM | [Groq](https://groq.com/) (Llama 3.3 70B) | Fast inference, OpenAI-compatible API, free tier |
+| LLM | [Groq](https://groq.com/) (`openai/gpt-oss-120b` by default) | OpenAI-compatible API; model selected through `GROQ_MODEL` |
 | LLM Client | [openai](https://github.com/openai/openai-python) | Works with any OpenAI-compatible endpoint |
 | Server | [Uvicorn](https://www.uvicorn.org/) | ASGI server for FastAPI |
 | Env | [python-dotenv](https://github.com/theskumar/python-dotenv) | Load `.env` files for API keys |
