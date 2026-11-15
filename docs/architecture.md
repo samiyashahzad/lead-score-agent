@@ -9,7 +9,7 @@ Raw inquiry text
        │
        ▼
 ┌──────────────────────┐
-│  Signal Extraction   │  LLM (Groq / Llama 3.3 70B)
+│  Signal Extraction   │  LLM (Groq; current default: gpt-oss-120b)
 │  signal_extraction.py│  Extracts 7 structured signals from freeform text
 └──────────┬───────────┘
            │  Signals (Pydantic model)
@@ -21,13 +21,15 @@ Raw inquiry text
            │  score, priority, classification, confidence
            ▼
 ┌──────────────────────┐
-│ Explanation Generator│  LLM (Groq / Llama 3.3 70B)
+│ Explanation Generator│  LLM (Groq; current default: gpt-oss-120b)
 │ explanation.py       │  Human-readable reasoning + next action recommendation
 └──────────┬───────────┘
            │
            ▼
     QualifyResponse (JSON)
 ```
+
+**Model configuration:** The model is selected through the `GROQ_MODEL` environment variable. The current code default is `openai/gpt-oss-120b` through Groq's OpenAI-compatible API. Earlier development and evaluation runs used Groq's Llama 3.3 70B Versatile model, which is now deprecated and cannot currently be used to reproduce those runs. The round-two extraction result changed both the prompt and model, so the observed 92% → 96% increase cannot be attributed to either change independently.
 
 ## Stage 1: Signal Extraction (`signal_extraction.py`)
 
